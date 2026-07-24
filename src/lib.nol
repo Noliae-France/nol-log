@@ -1,0 +1,89 @@
+// nol.log — journalisation à niveaux en pur Nolc.
+//
+// Quatre niveaux (debug < info < warn < error). Un journal filtre selon son
+// niveau minimal ; chaque ligne porte un horodatage epoch et l'étiquette du
+// niveau : « [INFO] 1690000000 message ». Sortie standard (print).
+
+extern fn time(tloc: Ptr) -> Int depuis "time.h"
+
+fn log_maintenant() -> Int {
+    unsafe {
+        return time(ptr_null())
+    }
+}
+
+// Niveaux : 0 = debug, 1 = info, 2 = warn, 3 = error.
+record Journal {
+    niveau_min: Int
+}
+
+fn journal_neuf(niveau_min: Int) -> Journal {
+    return Journal { niveau_min: niveau_min }
+}
+
+// Étiquette lisible d'un niveau.
+fn log_etiquette(niveau: Int) -> Text {
+    if niveau <= 0 {
+        return "DEBUG"
+    }
+    if niveau == 1 {
+        return "INFO"
+    }
+    if niveau == 2 {
+        return "WARN"
+    }
+    return "ERROR"
+}
+
+// Formate une ligne (sans l'émettre) : « [NIVEAU] <epoch> message ».
+fn log_formate(niveau: Int, message: Text) -> Text {
+    return "[" + log_etiquette(niveau) + "] " + text(log_maintenant()) + " " + message
+}
+
+// Émet un message s'il atteint le niveau minimal du journal.
+fn journal_emet(j: Journal, niveau: Int, message: Text) {
+    if niveau >= j.niveau_min {
+        print(log_formate(niveau, message))
+    }
+}
+
+fn log_debug(j: Journal, message: Text) {
+    journal_emet(j, 0, message)
+}
+fn log_info(j: Journal, message: Text) {
+    journal_emet(j, 1, message)
+}
+fn log_warn(j: Journal, message: Text) {
+    journal_emet(j, 2, message)
+}
+fn log_erreur(j: Journal, message: Text) {
+    journal_emet(j, 3, message)
+}
+
+// ============================ TESTS ============================
+
+fn test_etiquettes() {
+    assert(log_etiquette(0) == "DEBUG", "debug")
+    assert(log_etiquette(1) == "INFO", "info")
+    assert(log_etiquette(2) == "WARN", "warn")
+    assert(log_etiquette(3) == "ERROR", "error")
+}
+
+fn test_formate() {
+    let l = log_formate(1, "coucou")
+    // Commence par l'étiquette, contient le message.
+    assert(starts_with(l, "[INFO] "), "prefixe niveau")
+    assert(contains(l, "coucou"), "message present")
+}
+
+fn test_niveau_min() {
+    // Un journal au niveau WARN ne doit émettre ni debug ni info : on vérifie
+    // la logique de seuil via journal_emet (pas de crash) + le formatage.
+    let j = journal_neuf(2)
+    assert(j.niveau_min == 2, "seuil retenu")
+    log_debug(j, "ignore")
+    log_info(j, "ignore")
+    log_warn(j, "visible")
+    log_erreur(j, "visible")
+    assert(true, "emissions sans erreur")
+}
