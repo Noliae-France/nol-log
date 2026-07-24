@@ -4,6 +4,6 @@ version = "0.1.0"
 entree = "src/lib.nol"
 auteur = "daliranas <bastien@languedoc.ovh>"
 licence = "MIT"
-description = "Journalisation a niveaux (debug/info/warn/error) en pur Nolc, avec horodatage."
+description = "Journalisation à niveaux (debug/info/warn/error) en pur Nolc, avec horodatage."
 
 [dependances]
